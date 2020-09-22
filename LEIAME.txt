@@ -1,0 +1,9 @@
+Como compilar:
+
+make
+
+Para rodar:
+
+./{nome_do_executável}
+
+Nome dos executáveis: bccsh ou simulador.
