@@ -9,5 +9,6 @@ typedef struct Process {
 
 typedef struct List {
   Process * info;
-  int n;
+  int numProcess;
+  List * next;
 } List;
