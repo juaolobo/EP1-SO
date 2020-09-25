@@ -4,28 +4,10 @@
 #include <time.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <linux/getcpu.h>
 
 #define MAX 100
-#define OUTPUT_FILE
 
 pthread_mutex_t mutex1;
-
-int writeFile(Process * finishedProcess, char * fileName, int time) {
-  FILE * outputFile;
-
-  outputFile = fopen(fileName, "w");
-
-  if (outputFile == NULL) {
-    printf("Erro ao criar o arquivo\n");
-    exit(1);
-  }
-
-  finishedProcess->timesPaused = 0;
-  fprintf(outputFile, "%s %d %d\n", finishedProcess->name, time, (time - finishedProcess->t0));
-
-  return 0;
-}
 
 void * thread(void *process) {
 
@@ -43,53 +25,21 @@ void * thread(void *process) {
     total_time = difftime(time(NULL), begin);
   }
 
-  writeFile(process, OUTPUT_FILE, total_time)
-
   return NULL;
 
 } 
-
-void printArrival(Process * process) {
-  fprintf(stderr, "%s %d %d %d\n", process->name, process->t0, process->simTime, process->deadline);
-}
-
-int getCPUID() {
-
-}
-
-float getCPU(int id){
-
-}
-
-void printCPUConsumption() {
-  fprintf(stderr, "to be continued\n");
-}
-
-void printCPUDeparture(Process * process){
-  fprintf(stderr, "to be continued\n");
-}
-
-void printDeparture(process * Process){
-  fprintf(stderr, "O %s acabou de ser executado\n", process->name);
-  fprintf(stderr, "%s %d %d\n", process->name, time, (time - process->t0));
-}
-
-void printContextChanges(int contextChanges) {
-  fprintf(stderr, "Ocorrereu uma mudança de contexto. TOTAL : %d\n", contextChanges);
-}
 
 int firstComeFirstServed(List * processList, char * fileName, int descriptive) {
 
   printf("filinha\n");
   pthread_t tid[MAX];
   time_t begin;
-  double cur_time;
-  int contextChanges = processList->n - 1;
+  double cur_time = 0;
+  int contextChanges = processList->numProcess - 1;
 
   time(&begin);
   int i = 0;
   while (i < processList->numProcess) {
-
     if (cur_time >= processList[i].info->t0){
       if(pthread_create(&tid[i], NULL, thread, processList[i].info)){
         printf("Erro ao tentar criar as threads \n");
@@ -121,6 +71,12 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
   return 1;
 }
 
+void freeList(List *processList) {
+  for (int i = 0; i < processList->numProcess+1; i++)
+
+  // é preciso da um free a mais pq o loop do fscanf aloca uma celula a mais quando o feof é atingindo
+    free(processList[i].info);
+}
 
 int main(int argc, char **argv) {
 
@@ -139,12 +95,17 @@ int main(int argc, char **argv) {
   }
 
   for (int i = 0; !feof(inputFile); i++) {
+
     Process * currentProcess = malloc(sizeof(Process));
+
     if (fscanf(inputFile, "%s %d %d %d", currentProcess->name, &currentProcess->t0, &currentProcess->simTime, &currentProcess->deadline)) {
-      processList[i].info = currentProcess;
       processList->numProcess++;
+      processList[i].info = currentProcess;
     }
+
   }
+
+  fclose(inputFile);
 
   processList->numProcess = processList->numProcess - 1; // quando o fscanf falha, o n é acrescentado ainda
 
@@ -161,6 +122,8 @@ int main(int argc, char **argv) {
     roundRobin(processList, argv[3], descriptive);
 
   pthread_mutex_destroy(&mutex1);  
+
+  freeList(processList);
  
   return 1;
 }
