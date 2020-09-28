@@ -6,7 +6,8 @@ typedef struct Process {
   int t0;
   int simTime;
   int deadline;
-  int timesPaused;
+  int finishedTime;
+  int timePast;
 
 } Process;
 
@@ -14,5 +15,10 @@ typedef struct List {
   Process * info;
   int numProcess;
 } List;
+
+typedef struct Queue {
+  int index;
+  struct Queue * next;
+} Queue;
 
 #endif

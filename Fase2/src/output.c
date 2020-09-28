@@ -1,7 +1,6 @@
 #include "output.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "lista.h"
 
 void printArrival(Process * process) {
   fprintf(stderr, "%s %d %d %d\n", process->name, process->t0, process->simTime, process->deadline);
@@ -33,18 +32,16 @@ void printContextChanges(int contextChanges) {
 
 }
 
-int writeFile(Process * finishedProcess, char * fileName, int time) {
-  FILE * outputFile;
-
-  outputFile = fopen(fileName, "w");
+int writeFile(Process * finishedProcess, FILE * outputFile) {
 
   if (outputFile == NULL) {
     printf("Erro ao criar o arquivo\n");
     exit(1);
   }
+  printf("%s %d %d\n", finishedProcess->name, finishedProcess->finishedTime, (finishedProcess->finishedTime - finishedProcess->t0));
+  fprintf(outputFile, "%s %d %d\n", finishedProcess->name, finishedProcess->finishedTime, (finishedProcess->finishedTime - finishedProcess->t0));
 
-  finishedProcess->timesPaused = 0;
-  fprintf(outputFile, "%s %d %d\n", finishedProcess->name, time, (time - finishedProcess->t0));
+
 
   return 0;
 }
