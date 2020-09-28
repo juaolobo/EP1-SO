@@ -38,8 +38,8 @@ int writeFile(Process * finishedProcess, FILE * outputFile) {
     printf("Erro ao criar o arquivo\n");
     exit(1);
   }
-  printf("%s %d %d\n", finishedProcess->name, finishedProcess->finishedTime, (finishedProcess->finishedTime - finishedProcess->t0));
-  fprintf(outputFile, "%s %d %d\n", finishedProcess->name, finishedProcess->finishedTime, (finishedProcess->finishedTime - finishedProcess->t0));
+  printf("%s %d %d\n", finishedProcess->name, finishedProcess->finishedTime, (finishedProcess->finishedTime - finishedProcess->startTime));
+  fprintf(outputFile, "%s %d %d\n", finishedProcess->name, finishedProcess->finishedTime, (finishedProcess->finishedTime - finishedProcess->startTime));
 
 
 

@@ -3,11 +3,12 @@
 
 typedef struct Process {
   char name[30];
-  int t0;
+  int t0; 
   int simTime;
   int deadline;
   int finishedTime;
   int timePast;
+  int startTime;
 
 } Process;
 

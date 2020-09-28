@@ -13,7 +13,7 @@ typedef struct Queue {
 	int nItems;
 } Queue;
 
-Queue * initQ(Queue * queue);
+Queue * initQ();
 int queueEmpty(Queue * queue);
 int size(Queue * queue);
 int queueFull(Queue * queue);

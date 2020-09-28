@@ -2,13 +2,6 @@ processo1 1 6 6
 processo2 1 6 11
 processo3 1 6 17
 processo4 1 6 6
-processo5 1 6 11
-processo6 1 6 17
-processo7 1 6 6
-processo8 1 6 11
-processo9 1 6 17
-processo10 1 6 17
-processo11 1 6 17
-processo12 1 6 17
+
 
 

@@ -69,10 +69,10 @@ int main(int argc, char **argv) {
 }
 
 void * thread(void *process) {
-  long int operation; 
-  time_t startingTime;
-  double timePast = 0;
   Process * threadProcess = process;
+  time_t startingTime;
+  long int operation; 
+  double timePast = 0;
 
   time(&startingTime);
 
@@ -84,7 +84,7 @@ void * thread(void *process) {
     threadProcess->timePast = timePast;
   }
 
-  threadProcess->finishedTime = timePast + threadProcess->t0;
+  threadProcess->finishedTime = threadProcess->startTime + threadProcess->simTime;
   pthread_mutex_lock(&mutex2);
   threadAmount--;
   pthread_mutex_unlock(&mutex2);
@@ -103,19 +103,23 @@ int firstComeFirstServed(List * processList, char * fileName, int descriptive) {
   time(&startingTime);
   
   while (i < processList->numProcess) {
-    if (timePast == processList[i].info->t0) {
-      if(pthread_create(&tid[i], NULL, thread, processList[i].info)) {
-        printf("Erro ao tentar criar as threads \n");
-        exit(1);
+    if (timePast >= processList[i].info->t0) {
+      if (threadAmount == 0) {
+        threadAmount++;
+        processList[i].info->startTime = timePast;
+        if (pthread_create(&tid[i], NULL, thread, processList[i].info)) {
+          printf("Erro ao tentar criar as threads \n");
+          exit(1);
+        }
+        i++;
       }
-      i++;
     }
     timePast = difftime(time(0), startingTime);
   }
 
-  for (int i = 0; i < processList->numProcess; i++){
+  for (int i = 0; i < processList->numProcess; i++) {
     if(pthread_join(tid[i], NULL)) {
-      printf("Erro ao juntar as threads\n");
+      printf("Erro ao entrar na thread\n");
       exit(1);
     }
     writeFile(processList[i].info, outputFile);
@@ -129,8 +133,6 @@ int firstComeFirstServed(List * processList, char * fileName, int descriptive) {
 
 int shortestRemainingTime(List * processList, char * fileName, int descriptive) {
   printf("tempo restante");
-  // Queue * queue = NULL;
-  // Queue * aux = NULL;
   FILE * outputFile;
   pthread_t tid[MAX];
   time_t startingTime;
@@ -158,20 +160,6 @@ int shortestRemainingTime(List * processList, char * fileName, int descriptive) 
 
           insertQueue(q, maxTimeIndex, processList[maxTimeIndex].info->simTime - processList[maxTimeIndex].info->timePast);
 
-          // aux = malloc(sizeof(aux));
-          // aux->index = maxTimeIndex;
-          // aux->next = NULL;
-
-          // if (queue != NULL) {
-          //   aux->next = queue;
-          //   queue = aux;
-          // }
-
-          // else {
-          //   queue = aux;
-          // }
-
-          // aux = NULL;
           threadAmount--;
         }
       }

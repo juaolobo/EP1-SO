@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-Queue *  initQ() {
+Queue * initQ() {
 	Queue * queue = malloc(sizeof(Queue));
 	queue->start = NULL;
 	queue->end = NULL;
