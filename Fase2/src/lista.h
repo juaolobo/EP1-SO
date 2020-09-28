@@ -9,6 +9,8 @@ typedef struct Process {
   int finishedTime;
   int timePast;
   int startTime;
+  int index;
+  int paused;
 
 } Process;
 
