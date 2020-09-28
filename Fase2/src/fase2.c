@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <signal.h>
+#include "queue.h"
 
 #define MAX 100
 pthread_mutex_t mutex1;
@@ -72,9 +73,8 @@ void * thread(void *process) {
   time_t startingTime;
   double timePast = 0;
   Process * threadProcess = process;
-  time(&startingTime);
 
-    
+  time(&startingTime);
 
   while (timePast < threadProcess->simTime) {
     pthread_mutex_lock(&mutex1);
@@ -129,8 +129,8 @@ int firstComeFirstServed(List * processList, char * fileName, int descriptive) {
 
 int shortestRemainingTime(List * processList, char * fileName, int descriptive) {
   printf("tempo restante");
-  Queue * queue = NULL;
-  Queue * aux = NULL;
+  // Queue * queue = NULL;
+  // Queue * aux = NULL;
   FILE * outputFile;
   pthread_t tid[MAX];
   time_t startingTime;
@@ -138,6 +138,7 @@ int shortestRemainingTime(List * processList, char * fileName, int descriptive) 
   int contextChanges = 0;
   int i = 0;
   int maxTimeIndex = 0;
+  Queue *q = initQ();
 
   outputFile = fopen(fileName, "w");
   time(&startingTime);
@@ -146,29 +147,31 @@ int shortestRemainingTime(List * processList, char * fileName, int descriptive) 
     if (timePast == processList[i].info->t0) {
 
       if (threadAmount == 8) {
-        for (int j = 0; j < i; j++) 
+        for (int j = 0; j < i; j++) // acha o processo com maior tempo de execução faltante que está rodando
           if (timePast < processList[j].info->finishedTime) 
-            if (processList[j].info->simTime > processList[maxTimeIndex].info->simTime)
+            if ((processList[j].info->simTime - processList[j].info->timePast) > (processList[maxTimeIndex].info->simTime - processList[maxTimeIndex].info->timePast))
               maxTimeIndex = j;
         
         if ((processList[maxTimeIndex].info->simTime - processList[maxTimeIndex].info->timePast) > processList[i].info->simTime) { 
           pthread_kill(tid[maxTimeIndex], SIGSTOP);
           contextChanges++;
 
-          aux = malloc(sizeof(aux));
-          aux->index = maxTimeIndex;
-          aux->next = NULL;
+          insertQueue(q, maxTimeIndex, processList[maxTimeIndex].info->simTime - processList[maxTimeIndex].info->timePast);
 
-          if (queue != NULL) {
-            aux->next = queue;
-            queue = aux;
-          }
+          // aux = malloc(sizeof(aux));
+          // aux->index = maxTimeIndex;
+          // aux->next = NULL;
 
-          else {
-            queue = aux;
-          }
+          // if (queue != NULL) {
+          //   aux->next = queue;
+          //   queue = aux;
+          // }
 
-          aux = NULL;
+          // else {
+          //   queue = aux;
+          // }
+
+          // aux = NULL;
           threadAmount--;
         }
       }
@@ -187,17 +190,19 @@ int shortestRemainingTime(List * processList, char * fileName, int descriptive) 
 
     else {
       if (threadAmount < 8) {
-        aux = queue;
-        queue = aux->next;
-        aux->next = NULL;
+        if (!queueEmpty(q)) {
+          int index = removeQueue(q);
+        // aux = queue;
+        // queue = aux->next;
+        // aux->next = NULL;
 
-        if (pthread_kill(tid[aux->index], SIGCONT)) {
-          printf("Erro ao tentar criar as threads \n");
-          exit(1);
+          if (pthread_kill(tid[index], SIGCONT)) {
+            printf("Erro ao tentar criar as threads \n");
+            exit(1);
+          }
         }
         
         threadAmount++;
-        free(aux);
       }
     }
 

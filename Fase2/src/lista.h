@@ -16,9 +16,4 @@ typedef struct List {
   int numProcess;
 } List;
 
-typedef struct Queue {
-  int index;
-  struct Queue * next;
-} Queue;
-
 #endif
