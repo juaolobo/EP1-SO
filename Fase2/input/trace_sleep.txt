@@ -1,0 +1,7 @@
+processo1 1 6 6
+processo2 8 6 11
+processo3 8 6 17
+processo4 8 6 6
+
+
+

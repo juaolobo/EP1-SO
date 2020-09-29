@@ -101,8 +101,8 @@ void * thread(void *process) {
     }
     else 
       threadProcess->timePast = timePast;
-
   }
+  
   total = difftime(time(NULL), startingTime);
   threadProcess->finishedTime = threadProcess->startTime + total;
   threadAmount--;
@@ -113,13 +113,11 @@ void * thread(void *process) {
 int firstComeFirstServed(List * processList, char * fileName, int descriptive) {
   FILE * outputFile;
   pthread_t tid[MAX];
-  time_t startingTime;
-  double timePast = 0;
+  int timePast = 0;
   int contextChanges = processList->numProcess - 1;
   int i = 0;
 
   outputFile = fopen(fileName, "w");
-  time(&startingTime);
   
   while (i < processList->numProcess) {
     if (timePast >= processList[i].info->t0) {
@@ -133,7 +131,9 @@ int firstComeFirstServed(List * processList, char * fileName, int descriptive) {
         i++;
       }
     }
-    timePast = difftime(time(0), startingTime);
+    printf("to sleepando\n");
+    sleep(1);
+    timePast = timePast + 1;
   }
 
   for (int i = 0; i < processList->numProcess; i++) {
@@ -153,15 +153,14 @@ int firstComeFirstServed(List * processList, char * fileName, int descriptive) {
 int shortestRemainingTime(List * processList, char * fileName, int descriptive) {
   FILE * outputFile;
   pthread_t tid[MAX];
-  time_t startingTime;
-  double timePast = 0;
+  int timePast = 0;
   int contextChanges = processList->numProcess - 1;
   int i = 0;
 
   Queue *q = initQ();
 
   outputFile = fopen(fileName, "w");
-  time(&startingTime);
+  // time(&startingTime);
 
   while (i < processList->numProcess) {
     if (timePast >= processList[i].info->t0) {
@@ -186,7 +185,7 @@ int shortestRemainingTime(List * processList, char * fileName, int descriptive) 
 
         if (currentTimeLeft > 0) { // bug estranho do tempo 
         
-          if (i > 0 && currentTimeLeft > processList[i].info->timePast) {
+          if (i > 0 && currentTimeLeft > processList[i].info->simTime) {
 
             contextChanges++;
             
@@ -214,13 +213,18 @@ int shortestRemainingTime(List * processList, char * fileName, int descriptive) 
     // não chegou processo, mas não tem nada rodando então tem que ver se tem algo na fila
     else
       flushQueue(q, processList, &contextChanges, tid, timePast);
-    
-    timePast = difftime(time(0), startingTime);
+
+    printf("to sleepando\n");
+    sleep(1);
+
+    timePast = timePast +1;
   }
 
   while (!queueEmpty(q)) {
+    printf("%f\n", timePast);
     flushQueue(q, processList, &contextChanges, tid, timePast);
-    timePast = difftime(time(0), startingTime);
+    sleep(1);
+    timePast = timePast + 1;
   }
 
   for (int i = 0; i < processList->numProcess; i++) {
