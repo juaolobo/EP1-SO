@@ -73,20 +73,38 @@ int main(int argc, char **argv) {
 
 void * thread(void *process) {
   Process * threadProcess = process;
-  time_t startingTime;
+  time_t startingTime, time2;
   long int operation; 
-  double timePast = 0;
+  int timePast = 0, timePast_last = 0, delay;
+  int waspaused = 0, total;
 
   time(&startingTime);
+  printf("comecei a contarm na thread %d\n", threadProcess->index + 1);
   while (timePast < threadProcess->simTime) {
+    timePast_last = timePast;
     pthread_mutex_lock(&mutexVector[threadProcess->index]);
     operation++;
     pthread_mutex_unlock(&mutexVector[threadProcess->index]);
-    timePast = difftime(time(NULL), startingTime);
-    threadProcess->timePast = timePast;
-  }
 
-  threadProcess->finishedTime = threadProcess->startTime + threadProcess->simTime;
+    if (waspaused == 0){
+      timePast = difftime(time(NULL), startingTime);
+    }
+    else {
+      timePast = difftime(time(NULL), startingTime) - difftime(time2, startingTime);
+    }
+
+    if ((timePast - timePast_last) > 1){
+      waspaused = 1;
+      time(&time2); 
+      delay = difftime(time2, startingTime);
+      timePast_last = timePast = timePast - delay;
+    }
+    else 
+      threadProcess->timePast = timePast;
+
+  }
+  total = difftime(time(NULL), startingTime);
+  threadProcess->finishedTime = threadProcess->startTime + total;
   threadAmount--;
   printf("THREAD %d finalizada\n", threadProcess->index + 1);
   return NULL;
@@ -148,9 +166,13 @@ int shortestRemainingTime(List * processList, char * fileName, int descriptive) 
   while (i < processList->numProcess) {
     if (timePast >= processList[i].info->t0) {
       if (threadAmount == 0) {
+        
         threadAmount++;
-        printf("criamo\n");
+        
+        printf("criamo %d\n", i+1);
+        
         processList[i].info->startTime = timePast;
+        
         if (pthread_create(&tid[i], NULL, thread, processList[i].info)) {
           printf("Erro ao tentar criar as threads \n");
           exit(1);
@@ -161,27 +183,34 @@ int shortestRemainingTime(List * processList, char * fileName, int descriptive) 
         printf("VAMO VER SE MUDA\n");
 
         int currentTimeLeft = (processList[i - 1].info->simTime - processList[i - 1].info->timePast);
-        if (i > 0 && currentTimeLeft > processList[i].info->timePast) {
-          contextChanges++;
-          printf("Mudamos de %s para %s\n", processList[i - 1].info->name, processList[i].info->name);
-          processList[i - 1].info->paused = 1;
-          pthread_mutex_lock(&mutexVector[i - 1]);
-          insertQueue(q, i - 1, currentTimeLeft);
-          processList[i].info->startTime = timePast;
-          if (pthread_create(&tid[i], NULL, thread, processList[i].info)) {
-            printf("Erro ao tentar criar as threads \n");
-            exit(1);
-          }
-        }
 
-        else {
-          insertQueue(q, i, processList[i].info->simTime);
-          printf("NU MUDAMO\n");
+        if (currentTimeLeft > 0) { // bug estranho do tempo 
+        
+          if (i > 0 && currentTimeLeft > processList[i].info->timePast) {
+
+            contextChanges++;
+            
+            printf("Mudamos de %s para %s\n", processList[i - 1].info->name, processList[i].info->name);
+            processList[i - 1].info->paused = 1;
+            pthread_mutex_lock(&mutexVector[i - 1]);
+            insertQueue(q, i - 1, currentTimeLeft);
+            processList[i].info->startTime = timePast;
+
+            if (pthread_create(&tid[i], NULL, thread, processList[i].info)) {
+              printf("Erro ao tentar criar as threads \n");
+              exit(1);
+            }
+          }
+
+          else {
+            insertQueue(q, i, processList[i].info->simTime);
+            printf("NU MUDAMO\n");
+          }
+          i++;
         }
-        i++;
       }
     }
-
+    
     // não chegou processo, mas não tem nada rodando então tem que ver se tem algo na fila
     else
       flushQueue(q, processList, &contextChanges, tid, timePast);
@@ -235,6 +264,7 @@ void flushQueue(Queue * q, List * processList, int * contextChanges, pthread_t *
 
     else {
       printf("ESSA GALERA NEM RODO AINDA\n");
+      printf("%f\n", timePast);
       processList[index].info->startTime = timePast;
       if (pthread_create(&tid[index], NULL, thread, processList[index].info)) {
         printf("Erro ao tentar criar as threads \n");

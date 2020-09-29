@@ -41,7 +41,5 @@ int writeFile(Process * finishedProcess, FILE * outputFile) {
   printf("%s %d %d\n", finishedProcess->name, finishedProcess->finishedTime, (finishedProcess->finishedTime - finishedProcess->startTime));
   fprintf(outputFile, "%s %d %d\n", finishedProcess->name, finishedProcess->finishedTime, (finishedProcess->finishedTime - finishedProcess->startTime));
 
-
-
   return 0;
 }
