@@ -17,7 +17,8 @@ Queue * initQ();
 int queueEmpty(Queue * queue);
 int size(Queue * queue);
 int queueFull(Queue * queue);
-void insertQueue(Queue * queue, int index, int time);
+void insertQueue(Queue * queue, int index, int time, int sort);
 int removeQueue(Queue * queue);
+void freeQueue(Queue * queue);
 
 #endif

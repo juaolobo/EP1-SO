@@ -21,7 +21,7 @@ int queueEmpty(Queue * queue) {
 	return 1;
 }
 
-void insertQueue(Queue *queue, int index, int time) {
+void insertQueue(Queue *queue, int index, int time, int sort) {
 
 	QNode * new = malloc(sizeof(QNode));
 	QNode * aux = queue->start, * aux_prev;
@@ -30,31 +30,46 @@ void insertQueue(Queue *queue, int index, int time) {
 	new->timeRemaining = time;
 	new->next = NULL;
 
-	if (!queueEmpty(queue)){
+	if (sort) {
+		if (!queueEmpty(queue)){
 
-		while (aux != NULL && aux->timeRemaining <= time){
-			aux_prev = aux;
-			aux = aux->next;
+			while (aux != NULL && aux->timeRemaining <= time){
+				aux_prev = aux;
+				aux = aux->next;
+			}
+
+			if (aux == queue->start){ // caso 1 : new deve ser o inicio da fila
+				new->next = aux;
+				queue->start = new;
+				return;
+			}
+
+			if (aux != NULL) { // caso 2 : new esta no meio da fila 
+				new->next = aux->next;
+				aux->next = new;
+			}
+
+			else { // caso 3 : new deve ser o ultimo da fila
+				aux_prev->next = new;
+			}
+
 		}
-
-		if (aux == queue->start){ // caso 1 : new deve ser o inicio da fila
-			new->next = aux;
+		else 
 			queue->start = new;
-			return;
-		}
-
-		if (aux != NULL) { // caso 2 : new esta no meio da fila 
-			new->next = aux->next;
-			aux->next = new;
-		}
-
-		else { // caso 3 : new deve ser o ultimo da fila
-			aux_prev->next = new;
-		}
-
 	}
-	else 
-		queue->start = new;
+
+	else {
+		if (queueEmpty(queue)){
+			queue->end = queue->start = new;
+		}
+		else {
+			if (queue->end)
+				queue->end->next = new;
+			queue->end = new;
+		}
+
+	} 
+
 
 }
 
@@ -71,6 +86,10 @@ int removeQueue(Queue * queue) {
 
 void printQ(Queue * queue) {
 	QNode * aux = queue->start;
+	if (queueEmpty(queue)){
+		printf("vazia\n");
+		return;
+	}
 
 	while( aux != NULL){
 		printf("%d\n", aux->index);
@@ -78,8 +97,9 @@ void printQ(Queue * queue) {
 	}
 }
 
-void freeQ(Queue * queue) {
+void freeQueue(Queue * queue) {
 	QNode * aux = queue->start;
+
 	while(aux != NULL) {
 		aux = queue->start->next;
 		free(queue->start);
