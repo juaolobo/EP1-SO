@@ -77,9 +77,9 @@ int main(int argc, char **argv) {
 
 void * thread(void *process) {
   Process * threadProcess = process;
-  time_t startingTime, time2;
+  time_t startingTime;
   long int operation; 
-  int timePast = 0, timePast_last = 0, delay;
+  int timePast = 0, timePast_last = 0, delay = 0;
   int waspaused = 0, total;
 
   time(&startingTime);
@@ -95,17 +95,18 @@ void * thread(void *process) {
       timePast = difftime(time(NULL), startingTime);
     }
     else {
-      timePast = difftime(time(NULL), startingTime) - difftime(time2, startingTime);
+      timePast = difftime(time(NULL), startingTime) - delay;
     }
 
     if ((timePast - timePast_last) > 1){
+      printf("parte  1: %d %d %d\n", timePast, timePast_last, delay);
       waspaused = 1;
-      time(&time2); 
-      delay = difftime(time2, startingTime);
-      timePast_last = timePast = timePast - delay;
+      delay = timePast - timePast_last;
+      timePast_last = timePast = timePast - timePast_last;
+      threadProcess->timePast = timePast;
     }
     else {
-      printf("thread  %d timePast %d\n", threadProcess->index+1, timePast);
+      // printf("thread  %d timePast %d\n", threadProcess->index+1, timePast);
       threadProcess->timePast = timePast;
     }
   }
@@ -267,19 +268,20 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
     while(lastArrived < processList->numProcess && processList[lastArrived].info->t0 <= timePast) {
       lastArrived++;
     }
-
+    printf("%d\n", lastArrived);
+    finishedSum = 0;
     for (int p = lastArrived - 1; p >= 0; p--){
-      finishedSum = 0;
-      printf("%d %d\n", processList[p].info->simTime, processList[p].info->timePast);
-      if (processList[p].info->simTime == processList[p].info->timePast)
+
+      if (processList[p].info->simTime == processList[p].info->timePast){
+        printf("%s %d %d\n",processList[p].info->name, processList[p].info->simTime, processList[p].info->timePast);
+        printf("%d %d\n",processList[p].info->finishedTime, processList[p].info->startTime);
         finishedSum++;
+      }
       else
         insertQueue(q, p, 0, NORMAL);
     } 
-    // printQ(q);
-    // printf("to antes%d\n", threadAmount);
-    // printf("\n");
     finishedProcesses = finishedSum; 
+    printf("finished %d\n", finishedProcesses);
     if (threadAmount == 1) {    
       // printf("index %d\n", index);
       if ((processList[index].info->timePast) % quantum == 0) {
@@ -300,6 +302,7 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
         }
 
         else {
+          processList[index].info->startTime = timePast;
           if (pthread_create(&tid[index], NULL, thread, processList[index].info)) {
             printf("Erro ao tentar criar as threads \n");
             exit(1);
