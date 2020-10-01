@@ -15,7 +15,7 @@ int size(Queue *queue) {
 	return queue->nItems;
 }
 
-int findQueue(Queue * queue, int index) {
+int find(Queue * queue, int index) {
 	if (queueEmpty(queue))
 		return -1;
 	QNode * aux = queue->start;
@@ -105,9 +105,11 @@ void printQ(Queue * queue) {
 	}
 
 	while( aux != NULL){
-		printf("%d\n", aux->index);
+		printf("%d ", aux->index);
 		aux = aux->next;
 	}
+
+	printf("\n");
 }
 
 void freeQueue(Queue * queue) {
