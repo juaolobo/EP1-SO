@@ -279,23 +279,12 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
       else
        if (find(q, p) == -1 && processList[p].info->simTime - processList[p].info->timePast >= quantum)
         insertQueue(q, p, 0, NORMAL);
-      if (timePast == 9 || timePast == 8 || timePast == 7 || timePast == 6){
-        printf("segundo %d\nfila ", timePast);
-        printQ(q);
-        printf("%d %d %d %d\n", p, processList[p].info->timePast,processList[p].info->simTime, finishedSum);
-      }
 
     } 
 
-    // printf("fila ");
-    // printQ(q);
-    // printf("\n");
-
 
     finishedProcesses = finishedSum; 
-    // printf("finished %d\n", finishedProcesses);
     if (threadAmount == 1) {    
-      // printf("timePast %d %d\n", processList[index].info->timePast, index);
       if ((processList[index].info->timePast) % quantum == 0) {
         contextChanges++;
         pthread_mutex_lock(&mutexVector[index]);
@@ -307,10 +296,6 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
     if (threadAmount == 0) {
       if (!queueEmpty(q)) {
         index = removeQueue(q);
-        // printf("fila dentro do if ");
-        // printQ(q);
-        // printf("\n");
-        // printf("%d %d\n", timePast, processList[index].info->timePast);
         if (processList[index].info->paused) {
           contextChanges++;
           pthread_mutex_unlock(&mutexVector[index]);
@@ -324,7 +309,7 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
             exit(1);
           }
 
-          if (index > 0 && processList[index].info->t0 == processList[index - 1].info->finishedTime)
+          if (processList[index].info->t0 == processList[index - 1].info->finishedTime)
             contextChanges++;
           
         }
