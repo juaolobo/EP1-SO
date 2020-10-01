@@ -1,5 +1,8 @@
-#ifndef FILA_h
-#define FILA_h
+#ifndef QUEUE_H
+#define QUEUE_H
+
+#define SORTED 1
+#define NORMAL 0
 
 typedef struct QNode {
 	int index;

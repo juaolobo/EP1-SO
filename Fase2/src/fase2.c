@@ -4,14 +4,13 @@
 #include <time.h>
 #include <pthread.h>
 #include <unistd.h>
-#include <signal.h>
 #include "queue.h"
+#include "lista.h"
 
 #define MAX 100
-#define SORTED 1
-#define NORMAL 0
 
 pthread_mutex_t mutexVector[MAX];
+
 int threadAmount = 0;
 
 void * thread(void *process);

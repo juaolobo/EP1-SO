@@ -1,25 +1,38 @@
 #include "output.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void printArrival(Process * process) {
   fprintf(stderr, "%s %d %d %d\n", process->name, process->t0, process->simTime, process->deadline);
 }
 
 int getCPUID() {
-	return 0;
-}
 
-float getCPU(int id){
-	return 0;
-}
+    FILE* procFile = fopen("/proc/self/stat", "r");
+    char fileRead[10000];
 
-void printCPUConsumption() {
-  fprintf(stderr, "to be continued\n");
+    fread(fileRead, sizeof(char), 10000, procFile);
+
+    fclose(procFile);
+
+    char* CPUIDstr = strtok(fileRead, " ");
+    
+    // o número da cpu utilizada se encontra no campo 39 do arquivo
+    // splita a string em varios pedaços separados por espaço até o objetivo
+    for (int i = 1; i < 38; i++)
+        CPUIDstr = strtok(NULL, " ");
+
+    CPUIDstr = strtok(NULL, " ");
+    int CPUID = atoi(CPUIDstr);
+
+    return CPUID;
 }
 
 void printCPUDeparture(Process * process){
-  fprintf(stderr, "to be continued\n");
+  // fprintf(stderr, "to be continued\n");
+
+  int CPUID = getCPUID();
 }
 
 void printDeparture(Process * process, int time){
