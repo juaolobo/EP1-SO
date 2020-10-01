@@ -136,14 +136,10 @@ int firstComeFirstServed(List * processList, char * fileName, int descriptive) {
           exit(1);
         }
 
-        i++;
-      }
-
-      else {
-        if (j < processList->numProcess && timePast >= processList[j].info->t0) {
-          j++;
+        if (i > 0 && processList[i].info->t0 <= processList[i - 1].info->finishedTime)
           contextChanges++;
-        }
+          
+        i++;
       }
     }
 
@@ -156,6 +152,9 @@ int firstComeFirstServed(List * processList, char * fileName, int descriptive) {
       printf("Erro ao entrar na thread\n");
       exit(1);
     }
+
+
+
     writeFile(processList[i].info, outputFile);
   }
 
@@ -169,7 +168,7 @@ int shortestRemainingTime(List * processList, char * fileName, int descriptive) 
   FILE * outputFile;
   pthread_t tid[MAX];
   int timePast = 0;
-  int contextChanges = processList->numProcess - 1;
+  int contextChanges = 0;
   int i = 0;
 
   Queue *q = initQ();
@@ -186,6 +185,9 @@ int shortestRemainingTime(List * processList, char * fileName, int descriptive) 
           printf("Erro ao tentar criar as threads \n");
           exit(1);
         }
+
+        if (i > 0 && processList[i].info->t0 == processList[i - 1].info->finishedTime)
+          contextChanges++;
 
         i++;
       }
@@ -217,12 +219,13 @@ int shortestRemainingTime(List * processList, char * fileName, int descriptive) 
     }
     
     // não chegou processo, mas não tem nada rodando então tem que ver se tem algo na fila
-    else
+
+    else {
       flushQueue(q, processList, &contextChanges, tid, timePast);
+    }
 
     sleep(1);
-
-    timePast = timePast +1;
+    timePast = timePast + 1;
   }
 
   while (!queueEmpty(q)) {
@@ -281,7 +284,6 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
     finishedProcesses = finishedSum; 
     printf("finished %d\n", finishedProcesses);
     if (threadAmount == 1) {    
-      // printf("index %d\n", index);
       if ((processList[index].info->timePast) % quantum == 0) {
         contextChanges++;
         pthread_mutex_lock(&mutexVector[index]);
@@ -290,7 +292,6 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
       }
     }
 
-    // printf("to entre %d\n", threadAmount);
     if (threadAmount == 0) {
       if (!queueEmpty(q)) {
         index = removeQueue(q);
@@ -338,18 +339,15 @@ void freeList(List *processList) {
 
 void flushQueue(Queue * q, List * processList, int * contextChanges, pthread_t * tid, double timePast) {
   if (!queueEmpty(q) && threadAmount == 0) {
-    printf("VAMO DESCARREGAR ESSA FILA DESPAUSANDO O PESSOAR\n");
-
     int index = removeQueue(q);
 
     if (processList[index].info->paused) {
-      contextChanges++;
+      (*contextChanges)++;
       pthread_mutex_unlock(&mutexVector[index]);
     }
 
     else {
-      printf("ESSA GALERA NEM RODO AINDA\n");
-      printf("%f\n", timePast);
+      (*contextChanges)++;
       processList[index].info->startTime = timePast;
       if (pthread_create(&tid[index], NULL, thread, processList[index].info)) {
         printf("Erro ao tentar criar as threads \n");
