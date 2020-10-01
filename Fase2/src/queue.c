@@ -15,6 +15,19 @@ int size(Queue *queue) {
 	return queue->nItems;
 }
 
+int findQueue(Queue * queue, int index) {
+	if (queueEmpty(queue))
+		return -1;
+	QNode * aux = queue->start;
+	while(aux != NULL && aux->index != index)
+		aux = aux->next;
+
+	if (aux == NULL)
+		return -1;
+
+	return 1;
+}
+
 int queueEmpty(Queue * queue) {
 	if (queue != NULL)
 		return queue->start == NULL;

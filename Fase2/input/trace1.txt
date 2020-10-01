@@ -1,4 +1,4 @@
 processo1 1 4 8
 processo2 1 4 8 
 processo3 9 5 8
-processo4 15 2 8
+processo4 15 3 8

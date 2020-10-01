@@ -111,7 +111,9 @@ void * thread(void *process) {
 
   total = difftime(time(NULL), startingTime);
   threadProcess->finishedTime = threadProcess->startTime + total;
+  printf("%d\n", threadAmount);
   threadAmount--;
+  printf("%d\n", threadAmount);
   printf("THREAD %d finalizada\n", threadProcess->index + 1);
   return NULL;
 } 
@@ -262,28 +264,28 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
   int finishedSum = 0;
   while(finishedProcesses < processList->numProcess) {
 
-    while(lastArrived < processList->numProcess && processList[lastArrived].info->t0 <= timePast) {
+    while(lastArrived < processList->numProcess && processList[lastArrived].info->t0 <= timePast) 
       lastArrived++;
-    }
 
     printf("%d\n", lastArrived);
     finishedSum = 0;
 
+
     for (int p = lastArrived - 1; p >= 0; p--) {
 
-      if (processList[p].info->simTime == processList[p].info->timePast){
-        printf("%s %d %d\n",processList[p].info->name, processList[p].info->simTime, processList[p].info->timePast);
-        printf("%d %d\n",processList[p].info->finishedTime, processList[p].info->startTime);
+      if (processList[p].info->simTime <= processList[p].info->timePast){
         finishedSum++;
       }
 
-      else
+      else if (find(q, p) == -1)
         insertQueue(q, p, 0, NORMAL);
+
     } 
 
     finishedProcesses = finishedSum; 
-    printf("finished %d\n", finishedProcesses);
+    // printf("finished %d\n", finishedProcesses);
     if (threadAmount == 1) {    
+      // printf("timePast %d %d\n", processList[index].info->timePast, index);
       if ((processList[index].info->timePast) % quantum == 0) {
         contextChanges++;
         pthread_mutex_lock(&mutexVector[index]);

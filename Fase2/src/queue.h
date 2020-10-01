@@ -18,7 +18,8 @@ typedef struct Queue {
 
 Queue * initQ();
 int queueEmpty(Queue * queue);
-int size(Queue * queue);
+int sizeQueue(Queue * queue);
+int findQueue(Queue * queue, int index);
 int queueFull(Queue * queue);
 void insertQueue(Queue * queue, int index, int time, int sort);
 int removeQueue(Queue * queue);
