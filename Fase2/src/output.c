@@ -8,7 +8,6 @@ void printArrival(Process * process) {
 }
 
 int getCPUID() {
-
     FILE* procFile = fopen("/proc/self/stat", "r");
     char fileRead[10000];
 
@@ -33,6 +32,7 @@ void printCPUDeparture(Process * process){
   // fprintf(stderr, "to be continued\n");
 
   int CPUID = getCPUID();
+  fprintf(stderr, "%s liberando a CPU %d", process->name, CPUID);
 }
 
 void printDeparture(Process * process, int time){
@@ -41,8 +41,7 @@ void printDeparture(Process * process, int time){
 }
 
 void printContextChanges(int contextChanges) {
-  fprintf(stderr, "Ocorrereu uma mudança de contexto. TOTAL : %d\n", contextChanges);
-
+  fprintf(stderr, "Ocorreu uma mudança de contexto. TOTAL: %d\n", contextChanges);
 }
 
 int writeFile(Process * finishedProcess, FILE * outputFile) {
