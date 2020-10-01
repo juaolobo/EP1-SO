@@ -122,7 +122,6 @@ int firstComeFirstServed(List * processList, char * fileName, int descriptive) {
   int timePast = 0;
   int contextChanges = 0;
   int i = 0;
-  int j = 1;
   outputFile = fopen(fileName, "w");
 
   while (i < processList->numProcess) {
@@ -138,7 +137,7 @@ int firstComeFirstServed(List * processList, char * fileName, int descriptive) {
 
         if (i > 0 && processList[i].info->t0 <= processList[i - 1].info->finishedTime)
           contextChanges++;
-          
+
         i++;
       }
     }
@@ -152,8 +151,6 @@ int firstComeFirstServed(List * processList, char * fileName, int descriptive) {
       printf("Erro ao entrar na thread\n");
       exit(1);
     }
-
-
 
     writeFile(processList[i].info, outputFile);
   }
@@ -265,22 +262,25 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
   int finishedSum = 0;
   while(finishedProcesses < processList->numProcess) {
 
-    // descobre o ultimo processo que chegou
     while(lastArrived < processList->numProcess && processList[lastArrived].info->t0 <= timePast) {
       lastArrived++;
     }
+
     printf("%d\n", lastArrived);
     finishedSum = 0;
-    for (int p = lastArrived - 1; p >= 0; p--){
+
+    for (int p = lastArrived - 1; p >= 0; p--) {
 
       if (processList[p].info->simTime == processList[p].info->timePast){
         printf("%s %d %d\n",processList[p].info->name, processList[p].info->simTime, processList[p].info->timePast);
         printf("%d %d\n",processList[p].info->finishedTime, processList[p].info->startTime);
         finishedSum++;
       }
+
       else
         insertQueue(q, p, 0, NORMAL);
     } 
+
     finishedProcesses = finishedSum; 
     printf("finished %d\n", finishedProcesses);
     if (threadAmount == 1) {    
@@ -302,10 +302,15 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
 
         else {
           processList[index].info->startTime = timePast;
+
           if (pthread_create(&tid[index], NULL, thread, processList[index].info)) {
             printf("Erro ao tentar criar as threads \n");
             exit(1);
           }
+
+          if (index > 0 && processList[index].info->t0 == processList[index - 1].info->finishedTime)
+            contextChanges++;
+          
         }
         threadAmount++;
       }
