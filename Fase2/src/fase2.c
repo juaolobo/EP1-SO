@@ -23,6 +23,7 @@ void freeList(List *processList);
 int main(int argc, char **argv) {
   FILE * inputFile;
   List processList[MAX];
+  Process * currentProcess;
 
   processList->numProcess = 0;
   inputFile = fopen(argv[1], "r");
@@ -34,7 +35,7 @@ int main(int argc, char **argv) {
   }
 
   for (int i = 0; !feof(inputFile); i++) {
-    Process * currentProcess = malloc(sizeof(Process));
+    currentProcess = malloc(sizeof(Process));
     if (fscanf(inputFile, "%s %d %d %d", currentProcess->name, &currentProcess->t0, &currentProcess->simTime, &currentProcess->deadline)) {
       processList->numProcess++;
       processList[i].info = currentProcess;
@@ -42,14 +43,9 @@ int main(int argc, char **argv) {
       processList[i].info->timePast = 0;
       processList[i].info->paused = 0;      
     }
-    else {
-      printf("falho a última");
-    }
-    
   }
-
+  
   fclose(inputFile);
-  processList->numProcess = processList->numProcess - 1; // quando o fscanf falha, o n é acrescentado ainda
 
   for (int i = 0; i < processList->numProcess; i++) {
     pthread_mutex_init(&mutexVector[i], NULL);
@@ -386,6 +382,6 @@ int roundRobin(List * processList, char * fileName) {
 }
 
 void freeList(List *processList) {
-  for (int i = 0; i < processList->numProcess+1; i++)
+  for (int i = 0; i < processList->numProcess; i++)
     free(processList[i].info);
 }
