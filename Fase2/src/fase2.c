@@ -81,7 +81,7 @@ void * thread(void *process) {
   time_t startingTime;
   long int operation; 
   int timePast = 0, timePast_last = 0, delay = 0;
-  int waspaused = 0, total;
+  int wasPaused = 0, total;
 
   time(&startingTime);
 
@@ -96,7 +96,7 @@ void * thread(void *process) {
     operation++;
     pthread_mutex_unlock(&mutexVector[threadProcess->index]);
 
-    if (waspaused == 0){
+    if (wasPaused == 0) {
       timePast = difftime(time(NULL), startingTime);
     }
     else {
@@ -104,7 +104,7 @@ void * thread(void *process) {
     }
 
     if ((timePast - timePast_last) > 1) {
-      waspaused = 1;
+      wasPaused = 1;
       delay = timePast - timePast_last;
       timePast_last = timePast = timePast - timePast_last;
       threadProcess->timePast = timePast;
@@ -118,6 +118,7 @@ void * thread(void *process) {
   total = difftime(time(NULL), startingTime);
   threadProcess->finishedTime = threadProcess->startTime + total;
   threadAmount--;
+  
   if (descriptive) {
     printCPUDeparture(threadProcess);
     printDeparture(threadProcess);
