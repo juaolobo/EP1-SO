@@ -11,7 +11,6 @@
 #define MAX 100
 
 pthread_mutex_t mutexVector[MAX];
-
 int threadAmount = 0;
 int descriptive = 0;
 
@@ -19,7 +18,6 @@ void * thread(void *process);
 int firstComeFirstServed(List * processList, char * fileName);
 int shortestRemainingTime(List * processList, char * fileName);
 int roundRobin(List * processList, char * fileName);
-void flushQueue(int index, List * processList, pthread_t * tid, double timePast); 
 void freeList(List *processList);
 
 int main(int argc, char **argv) {
@@ -44,10 +42,13 @@ int main(int argc, char **argv) {
       processList[i].info->timePast = 0;
       processList[i].info->paused = 0;      
     }
+    else {
+      printf("falho a última");
+    }
+    
   }
 
   fclose(inputFile);
-
   processList->numProcess = processList->numProcess - 1; // quando o fscanf falha, o n é acrescentado ainda
 
   for (int i = 0; i < processList->numProcess; i++) {
@@ -83,6 +84,7 @@ void * thread(void *process) {
   int waspaused = 0, total;
 
   time(&startingTime);
+
   if (descriptive) {
     printCPUArrival(threadProcess);
     printArrival(threadProcess);
@@ -282,32 +284,31 @@ int shortestRemainingTime(List * processList, char * fileName) {
 int roundRobin(List * processList, char * fileName) {
   FILE * outputFile;
   pthread_t tid[MAX];
-  int quantum = 3;
+  Queue * q = initQ();
+  int quantum = 2;
   int timePast = 0;
   int contextChanges = 0;
   int finishedProcesses = 0, lastArrived = 0;
   int lastindex = -1;
-  Queue * q = initQ();
-
-  outputFile = fopen(fileName, "w");
   int index;
   int finishedSum = 0;
+
+  outputFile = fopen(fileName, "w");
+
   while(finishedProcesses < processList->numProcess) {
+    finishedSum = 0;
+
 
     while(lastArrived < processList->numProcess && processList[lastArrived].info->t0 <= timePast) 
       lastArrived++;
 
-    // printf("%d\n", lastArrived);
-    finishedSum = 0;
-
-
     for (int p = lastArrived - 1; p >= 0; p--) {
 
-      printf("%d %d %d\n", processList[p].info->simTime, processList[p].info->timePast, processList[p].info->finishedTime);
       if (processList[p].info->simTime <= processList[p].info->timePast) {
         finishedSum++;
       }
-      else
+
+      else {
         if (p == index) {
           if (find(q, p) == -1 && processList[p].info->simTime - processList[p].info->timePast > 0 && processList[p].info->timePast%quantum == 0)
             insertQueue(q, p, 0, NORMAL);
@@ -315,24 +316,21 @@ int roundRobin(List * processList, char * fileName) {
 
         else if (find(q, p) == -1)
           insertQueue(q, p, 0, NORMAL);
-
-
+      }
     }   
 
-    printf("fila ");
-    printQ(q);
-    printf("\n");
 
     finishedProcesses = finishedSum; 
     if (threadAmount == 1) {    
       lastindex = index;
+
       if (processList[index].info->timePast != processList[index].info->simTime && (processList[index].info->timePast) % quantum == 0) {
         pthread_mutex_lock(&mutexVector[index]);
         processList[index].info->paused = 1;
         threadAmount--;
       }
-
     }
+
     if (threadAmount == 0) {
       if (!queueEmpty(q)) {
         index = removeQueue(q);
@@ -340,6 +338,7 @@ int roundRobin(List * processList, char * fileName) {
           if (index != lastindex){
             contextChanges++;
           }
+
           pthread_mutex_unlock(&mutexVector[index]);
           processList[index].info->paused = 0;
         }
@@ -359,27 +358,25 @@ int roundRobin(List * processList, char * fileName) {
           else if (processList[lastindex].info->paused) {
             contextChanges++;
           }
-          
         }
+
         threadAmount++;
       }
     }
     sleep(1);
     timePast++;
-    printf("finished %d\n", finishedProcesses);
   }
 
   freeQueue(q);
 
   for (int i = 0; i < processList->numProcess; i++) {
-
     if (pthread_join(tid[i], NULL)) {
       printf("Erro ao entrar na thread\n");
       exit(1);
     }
+
     writeFile(processList[i].info, outputFile);
   }
-
 
   fprintf(outputFile, "%d", contextChanges);
   fclose(outputFile);
@@ -389,23 +386,5 @@ int roundRobin(List * processList, char * fileName) {
 
 void freeList(List *processList) {
   for (int i = 0; i < processList->numProcess+1; i++)
-
-  // é preciso da um free a mais pq o loop do fscanf aloca uma celula a mais quando o feof é atingindo
-  free(processList[i].info);
-}
-
-void flushQueue(int index, List * processList, pthread_t * tid, double timePast) {
-
-  if (processList[index].info->paused) {
-    pthread_mutex_unlock(&mutexVector[index]);
-  }
-
-  else {
-    processList[index].info->startTime = timePast;
-    if (pthread_create(&tid[index], NULL, thread, processList[index].info)) {
-      printf("Erro ao tentar criar as threads \n");
-      exit(1);
-    }
-  }
-  threadAmount++;
+    free(processList[i].info);
 }
