@@ -164,7 +164,8 @@ int firstComeFirstServed(List * processList, char * fileName) {
 
   fprintf(outputFile, "%d", contextChanges);
   fclose(outputFile);
-  printContextChanges(contextChanges);
+  if (descriptive)
+    printContextChanges(contextChanges);
 
   return 1;
 }
@@ -275,7 +276,9 @@ int shortestRemainingTime(List * processList, char * fileName) {
 
   fprintf(outputFile, "%d", contextChanges);
   fclose(outputFile);
-  printContextChanges(contextChanges);
+  if (descriptive)
+    printContextChanges(contextChanges);
+
   return 1;
 }
 
@@ -376,8 +379,9 @@ int roundRobin(List * processList, char * fileName) {
 
   fprintf(outputFile, "%d", contextChanges);
   fclose(outputFile);
-  printContextChanges(contextChanges);
-
+  if (descriptive)
+    printContextChanges(contextChanges);
+    
   return 1;
 }
 
