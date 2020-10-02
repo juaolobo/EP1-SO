@@ -257,6 +257,7 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
   int timePast = 0;
   int contextChanges = 0;
   int finishedProcesses = 0, lastArrived = 0;
+  int lastindex = -1;
   Queue * q = initQ();
 
   outputFile = fopen(fileName, "w");
@@ -282,23 +283,28 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
 
     } 
 
-
     finishedProcesses = finishedSum; 
     if (threadAmount == 1) {    
+      lastindex = index;
       if ((processList[index].info->timePast) % quantum == 0) {
-        contextChanges++;
         pthread_mutex_lock(&mutexVector[index]);
         processList[index].info->paused = 1;
         threadAmount--;
       }
     }
-
+    printf("fila ");
+    printQ(q);
+    printf("\n");
     if (threadAmount == 0) {
       if (!queueEmpty(q)) {
         index = removeQueue(q);
         if (processList[index].info->paused) {
-          contextChanges++;
+          if (index != lastindex){
+            printf("SOMEI fui de %d para %d\n", lastindex+1, index+1);
+            contextChanges++;
+          }
           pthread_mutex_unlock(&mutexVector[index]);
+          processList[index].info->paused = 0;
         }
 
         else {
@@ -308,9 +314,17 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
             printf("Erro ao tentar criar as threads \n");
             exit(1);
           }
-
-          if (processList[index].info->t0 == processList[index - 1].info->finishedTime)
+          
+          if (processList[index].info->t0 == processList[lastindex].info->finishedTime){
+            printf("SOMEI fui de %d para %d\n", lastindex+1, index+1);
             contextChanges++;
+          }
+
+          else if (processList[lastindex].info->paused) {
+            printf("SOMEI fui de %d para %d\n", lastindex+1, index+1);
+            contextChanges++;
+          }
+
           
         }
         threadAmount++;
@@ -323,12 +337,14 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
   freeQueue(q);
 
   for (int i = 0; i < processList->numProcess; i++) {
+
     if (pthread_join(tid[i], NULL)) {
       printf("Erro ao entrar na thread\n");
       exit(1);
     }
     writeFile(processList[i].info, outputFile);
   }
+
 
   fprintf(outputFile, "%d", contextChanges);
   fclose(outputFile);
