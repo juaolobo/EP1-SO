@@ -202,15 +202,15 @@ int shortestRemainingTime(List * processList, char * fileName) {
         } 
 
         else {
-
           processList[index].info->startTime = timePast;
+
           if (pthread_create(&tid[index], NULL, thread, processList[index].info)) {
             printf("Erro ao tentar criar as threads \n");
             exit(1);
           }
         }
         
-        if (processList[index].info->startTime == processList[lastindex].info->finishedTime){
+        if (processList[index].info->startTime == processList[lastindex].info->finishedTime) {
           contextChanges++;
         }
       }
@@ -220,7 +220,7 @@ int shortestRemainingTime(List * processList, char * fileName) {
       if (!queueEmpty(q)) {
         int currentTimeLeft = (processList[index].info->simTime - processList[index].info->timePast);
         int top = topQueue(q);
-        if (processList[top].info->t0 == timePast) { // detecta preempção na chegada
+        if (processList[top].info->t0 == timePast) { 
           if (processList[top].info->simTime < currentTimeLeft) {
             contextChanges++;
             top = removeQueue(q);
@@ -298,12 +298,10 @@ int roundRobin(List * processList, char * fileName) {
   while(finishedProcesses < processList->numProcess) {
     finishedSum = 0;
 
-
     while(lastArrived < processList->numProcess && processList[lastArrived].info->t0 <= timePast) 
       lastArrived++;
 
     for (int p = lastArrived - 1; p >= 0; p--) {
-
       if (processList[p].info->simTime <= processList[p].info->timePast) {
         finishedSum++;
       }
