@@ -17,6 +17,7 @@ typedef struct Queue {
 } Queue;
 
 Queue * initQ();
+int topQueue(Queue * queue);
 int queueEmpty(Queue * queue);
 int size(Queue * queue);
 int find(Queue * queue, int index);

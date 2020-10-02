@@ -1,47 +1,33 @@
+#define _GNU_SOURCE    
 #include "output.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sched.h>
 
 void printArrival(Process * process) {
   fprintf(stderr, "%s %d %d %d\n", process->name, process->t0, process->simTime, process->deadline);
 }
 
-int getCPUID() {
-    FILE* procFile = fopen("/proc/self/stat", "r");
-    char fileRead[10000];
-
-    fread(fileRead, sizeof(char), 10000, procFile);
-
-    fclose(procFile);
-
-    char* CPUIDstr = strtok(fileRead, " ");
-    
-    // o número da cpu utilizada se encontra no campo 39 do arquivo
-    // splita a string em varios pedaços separados por espaço até o objetivo
-    for (int i = 1; i < 38; i++)
-        CPUIDstr = strtok(NULL, " ");
-
-    CPUIDstr = strtok(NULL, " ");
-    int CPUID = atoi(CPUIDstr);
-
-    return CPUID;
+void printCPUArrival(Process * process) {
+  int CPUID = sched_getcpu();
+  fprintf(stderr, "%s começou a ocupar a CPU %d\n", process->name, CPUID);
 }
 
 void printCPUDeparture(Process * process){
   // fprintf(stderr, "to be continued\n");
 
-  int CPUID = getCPUID();
-  fprintf(stderr, "%s liberando a CPU %d", process->name, CPUID);
+  int CPUID = sched_getcpu();
+  fprintf(stderr, "%s liberando a CPU %d\n", process->name, CPUID);
 }
 
-void printDeparture(Process * process, int time){
+void printDeparture(Process * process){
   fprintf(stderr, "O %s acabou de ser executado\n", process->name);	
-  fprintf(stderr, "%s %d %d\n", process->name, time, (time - process->t0));
+  fprintf(stderr, "%s %d %d\n", process->name, process->finishedTime, (process->finishedTime - process->startTime));
 }
 
 void printContextChanges(int contextChanges) {
-  fprintf(stderr, "Ocorreu uma mudança de contexto. TOTAL: %d\n", contextChanges);
+  fprintf(stderr, "Ocorreram um total de %d mudanças de contexto.\n", contextChanges);
 }
 
 int writeFile(Process * finishedProcess, FILE * outputFile) {
@@ -50,7 +36,6 @@ int writeFile(Process * finishedProcess, FILE * outputFile) {
     printf("Erro ao criar o arquivo\n");
     exit(1);
   }
-  printf("%s %d %d %d\n", finishedProcess->name, finishedProcess->finishedTime, (finishedProcess->finishedTime - finishedProcess->startTime), finishedProcess->timePast);
   fprintf(outputFile, "%s %d %d\n", finishedProcess->name, finishedProcess->finishedTime, (finishedProcess->finishedTime - finishedProcess->startTime));
 
   return 0;

@@ -5,10 +5,9 @@
 
 int getCPUID();
 void printArrival(Process * process);
-float getCPU(int id);
-void printCPUConsumption();
+void printCPUArrival(Process * process);
 void printCPUDeparture(Process * process);
-void printDeparture(Process * process, int time);
+void printDeparture(Process * process);
 void printContextChanges(int contextChanges);
 int writeFile(Process * finishedProcess, FILE * outputFile);
 

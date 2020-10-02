@@ -6,24 +6,25 @@
 #include <unistd.h>
 #include "queue.h"
 #include "lista.h"
+#include <sched.h>
 
 #define MAX 100
 
 pthread_mutex_t mutexVector[MAX];
 
 int threadAmount = 0;
+int descriptive = 0;
 
 void * thread(void *process);
-int firstComeFirstServed(List * processList, char * fileName, int descriptive);
-int shortestRemainingTime(List * processList, char * fileName, int descriptive);
-int roundRobin(List * processList, char * fileName, int descriptive);
-void flushQueue(int index, List * processList, int *contextChanges, pthread_t * tid, double timePast); 
+int firstComeFirstServed(List * processList, char * fileName);
+int shortestRemainingTime(List * processList, char * fileName);
+int roundRobin(List * processList, char * fileName);
+void flushQueue(int index, List * processList, pthread_t * tid, double timePast); 
 void freeList(List *processList);
 
 int main(int argc, char **argv) {
   FILE * inputFile;
   List processList[MAX];
-  int descriptive = 0;
 
   processList->numProcess = 0;
   inputFile = fopen(argv[1], "r");
@@ -57,13 +58,13 @@ int main(int argc, char **argv) {
     descriptive = 1;
 
   if (atoi(argv[2]) == 1)
-    firstComeFirstServed(processList, argv[3], descriptive);
+    firstComeFirstServed(processList, argv[3]);
     
   if (atoi(argv[2]) == 2)
-    shortestRemainingTime(processList, argv[3], descriptive);
+    shortestRemainingTime(processList, argv[3]);
 
   if (atoi(argv[2]) == 3)
-    roundRobin(processList, argv[3], descriptive);
+    roundRobin(processList, argv[3]);
 
   freeList(processList);
 
@@ -82,7 +83,10 @@ void * thread(void *process) {
   int waspaused = 0, total;
 
   time(&startingTime);
-  printf("comecei a contar na thread %d\n", threadProcess->index + 1);
+  if (descriptive) {
+    printCPUArrival(threadProcess);
+    printArrival(threadProcess);
+  }
 
   while (timePast < threadProcess->simTime) {
     timePast_last = timePast;
@@ -97,7 +101,7 @@ void * thread(void *process) {
       timePast = difftime(time(NULL), startingTime) - delay;
     }
 
-    if ((timePast - timePast_last) > 1){
+    if ((timePast - timePast_last) > 1) {
       waspaused = 1;
       delay = timePast - timePast_last;
       timePast_last = timePast = timePast - timePast_last;
@@ -112,11 +116,15 @@ void * thread(void *process) {
   total = difftime(time(NULL), startingTime);
   threadProcess->finishedTime = threadProcess->startTime + total;
   threadAmount--;
-  printf("THREAD %d finalizada\n", threadProcess->index + 1);
+  if (descriptive) {
+    printCPUDeparture(threadProcess);
+    printDeparture(threadProcess);
+  }
+
   return NULL;
 } 
 
-int firstComeFirstServed(List * processList, char * fileName, int descriptive) {
+int firstComeFirstServed(List * processList, char * fileName) {
   FILE * outputFile;
   pthread_t tid[MAX];
   int timePast = 0;
@@ -161,7 +169,7 @@ int firstComeFirstServed(List * processList, char * fileName, int descriptive) {
   return 1;
 }
 
-int shortestRemainingTime(List * processList, char * fileName, int descriptive) {
+int shortestRemainingTime(List * processList, char * fileName) {
   FILE * outputFile;
   pthread_t tid[MAX];
   int timePast = 0;
@@ -175,59 +183,59 @@ int shortestRemainingTime(List * processList, char * fileName, int descriptive) 
 
   while (i < processList->numProcess) {
 
-    if (timePast >= processList[i].info->t0) {
-      if (threadAmount == 0) {
+    while (processList[i].info->t0 == timePast) {
+      insertQueue(q, i, processList[i].info->simTime, SORTED);
+      i++;
+    }
+
+    if (threadAmount == 0) {
+      if (!queueEmpty(q)) {
+        lastindex = index;
+        index = removeQueue(q);
         threadAmount++;
-        processList[i].info->startTime = timePast;
-        
-        if (pthread_create(&tid[i], NULL, thread, processList[i].info)) {
-          printf("Erro ao tentar criar as threads \n");
-          exit(1);
+
+        if (processList[index].info->paused){
+          pthread_mutex_unlock(&mutexVector[index]);
+          processList[index].info->paused = 0;
+        } 
+
+        else {
+
+          processList[index].info->startTime = timePast;
+          if (pthread_create(&tid[index], NULL, thread, processList[index].info)) {
+            printf("Erro ao tentar criar as threads \n");
+            exit(1);
+          }
         }
-
-        if (i > 0 && processList[i].info->t0 == processList[i - 1].info->finishedTime)
+        
+        if (processList[index].info->startTime == processList[lastindex].info->finishedTime){
           contextChanges++;
-
-        i++;
+        }
       }
+    }
 
-      if (threadAmount == 1) {
-        int currentTimeLeft = (processList[i - 1].info->simTime - processList[i - 1].info->timePast);
-
-        if (currentTimeLeft > 0) { 
-          if (i > 0 && currentTimeLeft > processList[i].info->simTime) {
+    if (threadAmount == 1) {
+      if (!queueEmpty(q)) {
+        int currentTimeLeft = (processList[index].info->simTime - processList[index].info->timePast);
+        int top = topQueue(q);
+        if (processList[top].info->t0 == timePast) { // detecta preempção na chegada
+          if (processList[top].info->simTime < currentTimeLeft) {
             contextChanges++;
-            processList[i - 1].info->paused = 1;
-            pthread_mutex_lock(&mutexVector[i - 1]);
-            insertQueue(q, i - 1, currentTimeLeft, SORTED);
-            processList[i].info->startTime = timePast;
-
-            if (pthread_create(&tid[i], NULL, thread, processList[i].info)) {
-              printf("Erro ao tentar criar as threads \n");
+            top = removeQueue(q);
+            pthread_mutex_lock(&mutexVector[index]);
+            insertQueue(q, index, currentTimeLeft, SORTED);
+            processList[index].info->paused = 1;
+            processList[top].info->startTime = timePast;
+            if (pthread_create(&tid[top], NULL, thread, processList[top].info)) {
+              printf("Erro ao tentar criar as threads aqui\n");
               exit(1);
             }
+            index = top;
           }
-
-          else {
-            insertQueue(q, i, processList[i].info->simTime, SORTED);
-            printf("NU MUDAMO\n");
-          }
-          i++;
         }
       }
     }
     
-    // não chegou processo, mas não tem nada rodando então tem que ver se tem algo na fila
-
-    else {
-      if (!queueEmpty(q)){
-        lastindex = index;
-        index = removeQueue(q);
-        flushQueue(index, processList, &contextChanges, tid, timePast);
-        if (processList[index].info->t0 <= processList[lastindex].info->finishedTime)
-          contextChanges++;
-      }
-    }
     sleep(1);
     timePast = timePast + 1;
   }
@@ -237,10 +245,19 @@ int shortestRemainingTime(List * processList, char * fileName, int descriptive) 
     if (threadAmount == 0) {
       lastindex = index;
       index = removeQueue(q);
-      flushQueue(index, processList, &contextChanges, tid, timePast);
-      if (processList[index].info->t0 <= processList[lastindex].info->finishedTime)
-        contextChanges++;
+      if (processList[index].info->paused) {
+        pthread_mutex_unlock(&mutexVector[index]);
+      }
 
+      else {
+        processList[index].info->startTime = timePast;
+        if (pthread_create(&tid[index], NULL, thread, processList[index].info)) {
+          printf("Erro ao tentar criar as threads \n");
+          exit(1);
+        }
+      }
+      threadAmount++;
+      contextChanges++;
     }
     sleep(1);
     timePast = timePast + 1;
@@ -258,15 +275,14 @@ int shortestRemainingTime(List * processList, char * fileName, int descriptive) 
 
   fprintf(outputFile, "%d", contextChanges);
   fclose(outputFile);
-
+  printContextChanges(contextChanges);
   return 1;
 }
 
-int roundRobin(List * processList, char * fileName, int descriptive) {
-  printf("Robin Hood\n");
+int roundRobin(List * processList, char * fileName) {
   FILE * outputFile;
   pthread_t tid[MAX];
-  int quantum = 2;
+  int quantum = 3;
   int timePast = 0;
   int contextChanges = 0;
   int finishedProcesses = 0, lastArrived = 0;
@@ -287,33 +303,41 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
 
     for (int p = lastArrived - 1; p >= 0; p--) {
 
-      if (processList[p].info->simTime <= processList[p].info->timePast){
+      printf("%d %d %d\n", processList[p].info->simTime, processList[p].info->timePast, processList[p].info->finishedTime);
+      if (processList[p].info->simTime <= processList[p].info->timePast) {
         finishedSum++;
       }
       else
-       if (find(q, p) == -1 && (processList[p].info->simTime - processList[p].info->timePast >= quantum || processList[p].info->simTime < quantum))
-        insertQueue(q, p, 0, NORMAL);
-    } 
+        if (p == index) {
+          if (find(q, p) == -1 && processList[p].info->simTime - processList[p].info->timePast > 0 && processList[p].info->timePast%quantum == 0)
+            insertQueue(q, p, 0, NORMAL);
+        }
+
+        else if (find(q, p) == -1)
+          insertQueue(q, p, 0, NORMAL);
+
+
+    }   
+
+    printf("fila ");
+    printQ(q);
+    printf("\n");
 
     finishedProcesses = finishedSum; 
     if (threadAmount == 1) {    
       lastindex = index;
-      if ((processList[index].info->timePast) % quantum == 0) {
+      if (processList[index].info->timePast != processList[index].info->simTime && (processList[index].info->timePast) % quantum == 0) {
         pthread_mutex_lock(&mutexVector[index]);
         processList[index].info->paused = 1;
         threadAmount--;
       }
 
     }
-    printf("fila ");
-    printQ(q);
-    printf("\n");
     if (threadAmount == 0) {
       if (!queueEmpty(q)) {
         index = removeQueue(q);
         if (processList[index].info->paused) {
           if (index != lastindex){
-            printf("SOMEI fui de %d para %d\n", lastindex+1, index+1);
             contextChanges++;
           }
           pthread_mutex_unlock(&mutexVector[index]);
@@ -329,15 +353,12 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
           }
 
           if (processList[index].info->t0 == processList[lastindex].info->finishedTime){
-            printf("SOMEI fui de %d para %d\n", lastindex+1, index+1);
             contextChanges++;
           }
 
           else if (processList[lastindex].info->paused) {
-            printf("SOMEI fui de %d para %d\n", lastindex+1, index+1);
             contextChanges++;
           }
-
           
         }
         threadAmount++;
@@ -345,6 +366,7 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
     }
     sleep(1);
     timePast++;
+    printf("finished %d\n", finishedProcesses);
   }
 
   freeQueue(q);
@@ -372,15 +394,13 @@ void freeList(List *processList) {
   free(processList[i].info);
 }
 
-void flushQueue(int index, List * processList, int * contextChanges, pthread_t * tid, double timePast) {
+void flushQueue(int index, List * processList, pthread_t * tid, double timePast) {
 
   if (processList[index].info->paused) {
-    (*contextChanges)++;
     pthread_mutex_unlock(&mutexVector[index]);
   }
 
   else {
-    (*contextChanges)++;
     processList[index].info->startTime = timePast;
     if (pthread_create(&tid[index], NULL, thread, processList[index].info)) {
       printf("Erro ao tentar criar as threads \n");

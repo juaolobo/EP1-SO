@@ -46,7 +46,7 @@ void insertQueue(Queue *queue, int index, int time, int sort) {
 	if (sort) {
 		if (!queueEmpty(queue)){
 
-			while (aux != NULL && aux->timeRemaining <= time){
+			while (aux != NULL && aux->timeRemaining < time){
 				aux_prev = aux;
 				aux = aux->next;
 			}
@@ -84,6 +84,10 @@ void insertQueue(Queue *queue, int index, int time, int sort) {
 	} 
 
 
+}
+
+int topQueue(Queue * queue) {
+	return queue->start->index;
 }
 
 int removeQueue(Queue * queue) {
