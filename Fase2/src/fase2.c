@@ -118,7 +118,7 @@ void * thread(void *process) {
   total = difftime(time(NULL), startingTime);
   threadProcess->finishedTime = threadProcess->startTime + total;
   threadAmount--;
-  
+
   if (descriptive) {
     printCPUDeparture(threadProcess);
     printDeparture(threadProcess);
@@ -168,6 +168,7 @@ int firstComeFirstServed(List * processList, char * fileName) {
 
   fprintf(outputFile, "%d", contextChanges);
   fclose(outputFile);
+  printContextChanges(contextChanges);
 
   return 1;
 }
@@ -379,6 +380,7 @@ int roundRobin(List * processList, char * fileName) {
 
   fprintf(outputFile, "%d", contextChanges);
   fclose(outputFile);
+  printContextChanges(contextChanges);
 
   return 1;
 }
