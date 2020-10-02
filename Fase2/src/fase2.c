@@ -111,9 +111,7 @@ void * thread(void *process) {
 
   total = difftime(time(NULL), startingTime);
   threadProcess->finishedTime = threadProcess->startTime + total;
-  printf("%d\n", threadAmount);
   threadAmount--;
-  printf("%d\n", threadAmount);
   printf("THREAD %d finalizada\n", threadProcess->index + 1);
   return NULL;
 } 
@@ -293,9 +291,8 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
         finishedSum++;
       }
       else
-       if (find(q, p) == -1)
+       if (find(q, p) == -1 && (processList[p].info->simTime - processList[p].info->timePast >= quantum || processList[p].info->simTime < quantum))
         insertQueue(q, p, 0, NORMAL);
-
     } 
 
     finishedProcesses = finishedSum; 
@@ -307,8 +304,6 @@ int roundRobin(List * processList, char * fileName, int descriptive) {
         threadAmount--;
       }
 
-      else if(timePast == processList[index].info->timePast)
-        threadAmount--;
     }
     printf("fila ");
     printQ(q);
