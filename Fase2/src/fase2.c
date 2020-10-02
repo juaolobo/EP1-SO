@@ -183,7 +183,7 @@ int shortestRemainingTime(List * processList, char * fileName) {
 
   while (i < processList->numProcess) {
 
-    while (processList[i].info->t0 == timePast) {
+    while (i < processList->numProcess && processList[i].info->t0 == timePast) {
       insertQueue(q, i, processList[i].info->simTime, SORTED);
       i++;
     }
@@ -288,7 +288,7 @@ int roundRobin(List * processList, char * fileName) {
   int contextChanges = 0;
   int finishedProcesses = 0, lastArrived = 0;
   int lastindex = -1;
-  int index;
+  int index = 0;
   int finishedSum = 0;
 
   outputFile = fopen(fileName, "w");
@@ -347,11 +347,11 @@ int roundRobin(List * processList, char * fileName) {
             exit(1);
           }
 
-          if (processList[index].info->t0 == processList[lastindex].info->finishedTime){
+          if (lastindex >= 0 && processList[index].info->t0 == processList[lastindex].info->finishedTime){
             contextChanges++;
           }
 
-          else if (processList[lastindex].info->paused) {
+          else if (lastindex >= 0 && processList[lastindex].info->paused) {
             contextChanges++;
           }
         }
